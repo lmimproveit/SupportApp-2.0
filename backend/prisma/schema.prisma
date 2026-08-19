@@ -1,0 +1,87 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Företag
+model Company {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  organizationNumber String   @unique
+  domain             String   @unique
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  users   User[]
+  tickets Ticket[]
+}
+
+// Användare
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  firstName String
+  lastName  String
+  role UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignedTickets Ticket[] @relation("AssignedTickets")
+
+  companyId Int
+  company   Company  @relation(fields: [companyId], references: [id])
+
+  tickets Ticket[] @relation("CreatedTickets")
+  messages Message[]
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+// Supportärenden
+model Ticket {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  status      TicketStatus @default(OPEN)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  assignedToId Int?
+assignedTo   User? @relation("AssignedTickets", fields: [assignedToId], references: [id])
+
+  userId    Int
+  user User @relation("CreatedTickets", fields: [userId], references: [id])
+
+  companyId Int
+  company   Company @relation(fields: [companyId], references: [id])
+
+  messages Message[]
+}
+// Meddelanden i supportärenden
+model Message {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+
+  ticketId Int
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+}
+
+enum UserRole {
+  USER
+  SUPPORT
+  ADMIN
+}
