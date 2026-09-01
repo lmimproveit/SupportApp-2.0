@@ -6,6 +6,7 @@ import { CompanyModule } from './company/company.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './user/user.module';
 import { TicketModule } from './ticket/ticket.module';
+import { MessageModule } from './message/message.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { TicketModule } from './ticket/ticket.module';
     PrismaModule,
     UserModule,
     TicketModule,
+    MessageModule,
   ],
   controllers: [AppController],
   providers: [AppService],
