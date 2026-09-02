@@ -32,9 +32,27 @@ export class TicketService {
   findAll() {
     return this.prisma.ticket.findMany({
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            companyId: true,
+          },
+        },
         company: true,
-        assignedTo: true,
+        assignedTo: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            companyId: true,
+          },
+        },
       },
     });
   }
@@ -43,9 +61,27 @@ export class TicketService {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id },
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            companyId: true,
+          },
+        },
         company: true,
-        assignedTo: true,
+        assignedTo: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            companyId: true,
+          },
+        },
       },
     });
 
