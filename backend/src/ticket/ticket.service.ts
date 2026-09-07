@@ -1,7 +1,12 @@
 import { UpdateTicketDto } from './dto/update-ticket.dto';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
+import { UserRole } from '../../generated/prisma/client';
 
 @Injectable()
 export class TicketService {
@@ -57,7 +62,11 @@ export class TicketService {
     });
   }
 
-  async findOne(id: number) {
+  async findOne(
+    id: number,
+    currentUserId: number,
+    currentUserRole: UserRole,
+  ) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id },
       include: {
@@ -87,6 +96,15 @@ export class TicketService {
 
     if (!ticket) {
       throw new NotFoundException('Ticket not found');
+    }
+
+    if (
+      currentUserRole === UserRole.USER &&
+      ticket.userId !== currentUserId
+    ) {
+      throw new ForbiddenException(
+        'You do not have permission to view this ticket',
+      );
     }
 
     return ticket;

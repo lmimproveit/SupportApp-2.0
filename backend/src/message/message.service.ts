@@ -1,12 +1,22 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMessageDto } from './dto/create-message.dto';
+import { UserRole } from '../../generated/prisma/client';
 
 @Injectable()
 export class MessageService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createMessageDto: CreateMessageDto) {
+  async create(
+    createMessageDto: CreateMessageDto,
+    currentUserId: number,
+    currentUserRole: UserRole,
+  ) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id: createMessageDto.ticketId },
     });
@@ -23,6 +33,24 @@ export class MessageService {
       throw new NotFoundException('User not found');
     }
 
+    if (
+      currentUserRole === UserRole.USER &&
+      ticket.userId !== currentUserId
+    ) {
+      throw new ForbiddenException(
+        'You do not have permission to write in this ticket',
+      );
+    }
+
+    if (
+      currentUserRole === UserRole.USER &&
+      createMessageDto.userId !== currentUserId
+    ) {
+      throw new ForbiddenException(
+        'You can only create messages as yourself',
+      );
+    }
+
     return this.prisma.message.create({
       data: createMessageDto,
     });
@@ -31,7 +59,16 @@ export class MessageService {
   findAll() {
     return this.prisma.message.findMany({
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            companyId: true,
+          },
+        },
         ticket: true,
       },
       orderBy: {
@@ -40,7 +77,11 @@ export class MessageService {
     });
   }
 
-  async findByTicket(ticketId: number) {
+  async findByTicket(
+    ticketId: number,
+    currentUserId: number,
+    currentUserRole: UserRole,
+  ) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id: ticketId },
     });
@@ -49,12 +90,30 @@ export class MessageService {
       throw new NotFoundException('Ticket not found');
     }
 
+    if (
+      currentUserRole === UserRole.USER &&
+      ticket.userId !== currentUserId
+    ) {
+      throw new ForbiddenException(
+        'You do not have permission to view messages in this ticket',
+      );
+    }
+
     return this.prisma.message.findMany({
       where: {
         ticketId,
       },
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            companyId: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'asc',
