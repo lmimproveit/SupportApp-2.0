@@ -12,25 +12,29 @@ import { UserRole } from '../../generated/prisma/client';
 export class TicketService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createTicketDto: CreateTicketDto) {
+  async create(
+    createTicketDto: CreateTicketDto,
+    currentUserId: number,
+    currentCompanyId: number,
+  ) {
     const user = await this.prisma.user.findUnique({
-      where: { id: createTicketDto.userId },
+      where: { id: currentUserId },
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const company = await this.prisma.company.findUnique({
-      where: { id: createTicketDto.companyId },
-    });
-
-    if (!company) {
-      throw new NotFoundException('Company not found');
+    if (user.companyId !== currentCompanyId) {
+      throw new ForbiddenException('Invalid company access');
     }
 
     return this.prisma.ticket.create({
-      data: createTicketDto,
+      data: {
+        ...createTicketDto,
+        userId: currentUserId,
+        companyId: currentCompanyId,
+      },
     });
   }
 
