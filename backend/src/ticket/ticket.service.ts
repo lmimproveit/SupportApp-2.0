@@ -17,14 +17,9 @@ export class TicketService {
     currentUserId: number,
     currentCompanyId: number,
   ) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: currentUserId },
-    });
+    const user = await this.prisma.user.findUnique({ where: { id: currentUserId } });
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
+    if (!user) throw new NotFoundException('User not found');
     if (user.companyId !== currentCompanyId) {
       throw new ForbiddenException('Invalid company access');
     }
@@ -38,30 +33,13 @@ export class TicketService {
     });
   }
 
-  findAll() {
+  findAll(currentCompanyId: number) {
     return this.prisma.ticket.findMany({
+      where: { companyId: currentCompanyId },
       include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            role: true,
-            companyId: true,
-          },
-        },
+        user: { select: { id: true, email: true, firstName: true, lastName: true, role: true, companyId: true } },
         company: true,
-        assignedTo: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            role: true,
-            companyId: true,
-          },
-        },
+        assignedTo: { select: { id: true, email: true, firstName: true, lastName: true, role: true, companyId: true } },
       },
     });
   }
@@ -70,57 +48,38 @@ export class TicketService {
     id: number,
     currentUserId: number,
     currentUserRole: UserRole,
+    currentCompanyId: number,
   ) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id },
       include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            role: true,
-            companyId: true,
-          },
-        },
+        user: { select: { id: true, email: true, firstName: true, lastName: true, role: true, companyId: true } },
         company: true,
-        assignedTo: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            role: true,
-            companyId: true,
-          },
-        },
+        assignedTo: { select: { id: true, email: true, firstName: true, lastName: true, role: true, companyId: true } },
       },
     });
 
-    if (!ticket) {
-      throw new NotFoundException('Ticket not found');
+    if (!ticket) throw new NotFoundException('Ticket not found');
+    if (ticket.companyId !== currentCompanyId) {
+      throw new ForbiddenException('You do not have permission to view this ticket');
     }
-
-    if (
-      currentUserRole === UserRole.USER &&
-      ticket.userId !== currentUserId
-    ) {
-      throw new ForbiddenException(
-        'You do not have permission to view this ticket',
-      );
+    if (currentUserRole === UserRole.USER && ticket.userId !== currentUserId) {
+      throw new ForbiddenException('You do not have permission to view this ticket');
     }
 
     return ticket;
   }
 
-  async update(id: number, updateTicketDto: UpdateTicketDto) {
-    const ticket = await this.prisma.ticket.findUnique({
-      where: { id },
-    });
+  async update(
+    id: number,
+    updateTicketDto: UpdateTicketDto,
+    currentCompanyId: number,
+  ) {
+    const ticket = await this.prisma.ticket.findUnique({ where: { id } });
 
-    if (!ticket) {
-      throw new NotFoundException('Ticket not found');
+    if (!ticket) throw new NotFoundException('Ticket not found');
+    if (ticket.companyId !== currentCompanyId) {
+      throw new ForbiddenException('You do not have permission to update this ticket');
     }
 
     if (updateTicketDto.assignedToId !== undefined) {
@@ -128,8 +87,12 @@ export class TicketService {
         where: { id: updateTicketDto.assignedToId },
       });
 
-      if (!assignedUser) {
-        throw new NotFoundException('Assigned user not found');
+      if (!assignedUser) throw new NotFoundException('Assigned user not found');
+      if (assignedUser.companyId !== currentCompanyId) {
+        throw new ForbiddenException('Assigned user belongs to another company');
+      }
+      if (![UserRole.SUPPORT, UserRole.ADMIN].includes(assignedUser.role)) {
+        throw new ForbiddenException('Tickets can only be assigned to support or admin users');
       }
     }
 
@@ -139,17 +102,14 @@ export class TicketService {
     });
   }
 
-  async remove(id: number) {
-    const ticket = await this.prisma.ticket.findUnique({
-      where: { id },
-    });
+  async remove(id: number, currentCompanyId: number) {
+    const ticket = await this.prisma.ticket.findUnique({ where: { id } });
 
-    if (!ticket) {
-      throw new NotFoundException('Ticket not found');
+    if (!ticket) throw new NotFoundException('Ticket not found');
+    if (ticket.companyId !== currentCompanyId) {
+      throw new ForbiddenException('You do not have permission to delete this ticket');
     }
 
-    return this.prisma.ticket.delete({
-      where: { id },
-    });
+    return this.prisma.ticket.delete({ where: { id } });
   }
 }
