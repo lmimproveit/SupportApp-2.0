@@ -1,5 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { CreateCompanyDto } from './dto/create-company.dto';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -7,32 +10,30 @@ import { PrismaService } from '../prisma/prisma.service';
 export class CompanyService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(createCompanyDto: CreateCompanyDto) {
-    return this.prisma.company.create({
-      data: createCompanyDto,
+  async findOne(id: number, currentCompanyId: number) {
+    if (id !== currentCompanyId) {
+      throw new ForbiddenException('You do not have permission to view this company');
+    }
+
+    const company = await this.prisma.company.findUnique({ where: { id } });
+    if (!company) throw new NotFoundException('Company not found');
+    return company;
+  }
+
+  async update(
+    id: number,
+    updateCompanyDto: UpdateCompanyDto,
+    currentCompanyId: number,
+  ) {
+    await this.findOne(id, currentCompanyId);
+    return this.prisma.company.update({
+      where: { id },
+      data: updateCompanyDto,
     });
   }
 
-  findAll() {
-  return this.prisma.company.findMany();
+  async remove(id: number, currentCompanyId: number) {
+    await this.findOne(id, currentCompanyId);
+    return this.prisma.company.delete({ where: { id } });
   }
-
-  findOne(id: number) {
-  return this.prisma.company.findUnique({
-    where: { id },
-  });
-  }
-
-  update(id: number, updateCompanyDto: UpdateCompanyDto) {
-  return this.prisma.company.update({
-    where: { id },
-    data: updateCompanyDto,
-  });
-  }
-
-  remove(id: number) {
-  return this.prisma.company.delete({
-    where: { id },
-  });
-}
 }
