@@ -35,8 +35,8 @@ export class TicketController {
 
   @Roles(UserRole.SUPPORT, UserRole.ADMIN)
   @Get()
-  findAll() {
-    return this.ticketService.findAll();
+  findAll(@Req() req: any) {
+    return this.ticketService.findAll(req.user.companyId);
   }
 
   @Get(':id')
@@ -45,6 +45,7 @@ export class TicketController {
       +id,
       req.user.userId,
       req.user.role,
+      req.user.companyId,
     );
   }
 
@@ -53,13 +54,18 @@ export class TicketController {
   update(
     @Param('id') id: string,
     @Body() updateTicketDto: UpdateTicketDto,
+    @Req() req: any,
   ) {
-    return this.ticketService.update(+id, updateTicketDto);
+    return this.ticketService.update(
+      +id,
+      updateTicketDto,
+      req.user.companyId,
+    );
   }
 
   @Roles(UserRole.ADMIN)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.ticketService.remove(+id);
+  remove(@Param('id') id: string, @Req() req: any) {
+    return this.ticketService.remove(+id, req.user.companyId);
   }
 }
