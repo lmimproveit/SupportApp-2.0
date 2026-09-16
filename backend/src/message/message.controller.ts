@@ -23,38 +23,34 @@ export class MessageController {
   constructor(private readonly messageService: MessageService) {}
 
   @Post()
-  create(
-    @Body() createMessageDto: CreateMessageDto,
-    @Req() req: any,
-  ) {
+  create(@Body() createMessageDto: CreateMessageDto, @Req() req: any) {
     return this.messageService.create(
       createMessageDto,
       req.user.userId,
       req.user.role,
+      req.user.companyId,
     );
   }
 
   @Roles(UserRole.SUPPORT, UserRole.ADMIN)
   @Get()
-  findAll() {
-    return this.messageService.findAll();
+  findAll(@Req() req: any) {
+    return this.messageService.findAll(req.user.companyId);
   }
 
   @Get('ticket/:ticketId')
-  findByTicket(
-    @Param('ticketId') ticketId: string,
-    @Req() req: any,
-  ) {
+  findByTicket(@Param('ticketId') ticketId: string, @Req() req: any) {
     return this.messageService.findByTicket(
       +ticketId,
       req.user.userId,
       req.user.role,
+      req.user.companyId,
     );
   }
 
   @Roles(UserRole.ADMIN)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.messageService.remove(+id);
+  remove(@Param('id') id: string, @Req() req: any) {
+    return this.messageService.remove(+id, req.user.companyId);
   }
 }
