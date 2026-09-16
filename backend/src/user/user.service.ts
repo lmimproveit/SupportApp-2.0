@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -23,14 +24,25 @@ export class UserService {
     });
     if (!company) throw new NotFoundException('Company not found');
 
+    const normalizedEmail = createUserDto.email.trim().toLowerCase();
     const existingUser = await this.prisma.user.findUnique({
-      where: { email: createUserDto.email },
+      where: { email: normalizedEmail },
     });
     if (existingUser) throw new ConflictException('Email already in use');
 
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
     const user = await this.prisma.user.create({
-      data: { ...createUserDto, companyId: currentCompanyId },
+      data: {
+        email: normalizedEmail,
+        password: hashedPassword,
+        firstName: createUserDto.firstName,
+        lastName: createUserDto.lastName,
+        role: createUserDto.role ?? UserRole.USER,
+        companyId: currentCompanyId,
+      },
     });
+
     const { password: _, ...safeUser } = user;
     return safeUser;
   }
@@ -99,9 +111,16 @@ export class UserService {
       throw new ForbiddenException('Users cannot be moved to another company');
     }
 
+    const data = {
+      ...updateUserDto,
+      ...(updateUserDto.email
+        ? { email: updateUserDto.email.trim().toLowerCase() }
+        : {}),
+    };
+
     const updatedUser = await this.prisma.user.update({
       where: { id },
-      data: updateUserDto,
+      data,
     });
     const { password: _, ...safeUser } = updatedUser;
     return safeUser;
