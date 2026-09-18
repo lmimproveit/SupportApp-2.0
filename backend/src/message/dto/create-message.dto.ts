@@ -11,7 +11,4 @@ export class CreateMessageDto {
 
   @IsInt()
   ticketId!: number;
-
-  @IsInt()
-  userId!: number;
 }
