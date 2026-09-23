@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 
@@ -25,30 +26,39 @@ export class UserController {
 
   @Roles(UserRole.ADMIN)
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+  create(@Body() createUserDto: CreateUserDto, @Req() req: any) {
+    return this.userService.create(createUserDto, req.user.companyId);
   }
 
   @Roles(UserRole.SUPPORT, UserRole.ADMIN)
   @Get()
-  findAll() {
-    return this.userService.findAll();
+  findAll(@Req() req: any) {
+    return this.userService.findAll(req.user.companyId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+  findOne(@Param('id') id: string, @Req() req: any) {
+    return this.userService.findOne(
+      +id,
+      req.user.userId,
+      req.user.role,
+      req.user.companyId,
+    );
   }
 
   @Roles(UserRole.ADMIN)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Req() req: any,
+  ) {
+    return this.userService.update(+id, updateUserDto, req.user.companyId);
   }
 
   @Roles(UserRole.ADMIN)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+  remove(@Param('id') id: string, @Req() req: any) {
+    return this.userService.remove(+id, req.user.companyId);
   }
 }

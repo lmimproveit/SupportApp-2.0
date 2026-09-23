@@ -16,6 +16,7 @@ export class MessageService {
     createMessageDto: CreateMessageDto,
     currentUserId: number,
     currentUserRole: UserRole,
+    currentCompanyId: number,
   ) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id: createMessageDto.ticketId },
@@ -25,12 +26,10 @@ export class MessageService {
       throw new NotFoundException('Ticket not found');
     }
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: createMessageDto.userId },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
+    if (ticket.companyId !== currentCompanyId) {
+      throw new ForbiddenException(
+        'You do not have permission to write in this ticket',
+      );
     }
 
     if (
@@ -42,22 +41,22 @@ export class MessageService {
       );
     }
 
-    if (
-      currentUserRole === UserRole.USER &&
-      createMessageDto.userId !== currentUserId
-    ) {
-      throw new ForbiddenException(
-        'You can only create messages as yourself',
-      );
-    }
-
     return this.prisma.message.create({
-      data: createMessageDto,
+      data: {
+        content: createMessageDto.content,
+        ticketId: createMessageDto.ticketId,
+        userId: currentUserId,
+      },
     });
   }
 
-  findAll() {
+  findAll(currentCompanyId: number) {
     return this.prisma.message.findMany({
+      where: {
+        ticket: {
+          companyId: currentCompanyId,
+        },
+      },
       include: {
         user: {
           select: {
@@ -81,6 +80,7 @@ export class MessageService {
     ticketId: number,
     currentUserId: number,
     currentUserRole: UserRole,
+    currentCompanyId: number,
   ) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id: ticketId },
@@ -88,6 +88,12 @@ export class MessageService {
 
     if (!ticket) {
       throw new NotFoundException('Ticket not found');
+    }
+
+    if (ticket.companyId !== currentCompanyId) {
+      throw new ForbiddenException(
+        'You do not have permission to view messages in this ticket',
+      );
     }
 
     if (
@@ -121,13 +127,20 @@ export class MessageService {
     });
   }
 
-  async remove(id: number) {
+  async remove(id: number, currentCompanyId: number) {
     const message = await this.prisma.message.findUnique({
       where: { id },
+      include: { ticket: true },
     });
 
     if (!message) {
       throw new NotFoundException('Message not found');
+    }
+
+    if (message.ticket.companyId !== currentCompanyId) {
+      throw new ForbiddenException(
+        'You do not have permission to delete this message',
+      );
     }
 
     return this.prisma.message.delete({

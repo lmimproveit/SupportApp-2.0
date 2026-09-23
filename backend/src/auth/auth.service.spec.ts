@@ -1,89 +1,56 @@
-import {
-  Injectable,
-  ConflictException,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../prisma/prisma.service';
+jest.mock('@nestjs/jwt', () => ({ JwtService: class JwtService {} }));
 
-@Injectable()
-export class AuthService {
-  constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
-  ) {}
+import { AuthService } from './auth.service';
 
-  async register(
-    email: string,
-    password: string,
-    firstName: string,
-    lastName: string,
-    companyId: number,
-  ) {
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email },
-    });
+jest.mock('bcrypt', () => ({ hash: jest.fn(), compare: jest.fn() }));
 
-    if (existingUser) {
-      throw new ConflictException('Email is already registered');
-    }
+describe('AuthService', () => {
+  const prisma = {
+    user: { findUnique: jest.fn(), create: jest.fn() },
+    company: { findUnique: jest.fn() },
+  };
+  const jwtService = { signAsync: jest.fn() };
+  let service: AuthService;
 
-    const company = await this.prisma.company.findUnique({
-      where: { id: companyId },
-    });
+  beforeEach(() => {
+    jest.clearAllMocks();
+    service = new AuthService(prisma as any, jwtService as any);
+  });
 
-    if (!company) {
-      throw new NotFoundException('Company not found');
-    }
+  it('normalizes email and omits password on register', async () => {
+    prisma.user.findUnique.mockResolvedValue(null);
+    prisma.company.findUnique.mockResolvedValue({ id: 1 });
+    (bcrypt.hash as jest.Mock).mockResolvedValue('hashed');
+    prisma.user.create.mockResolvedValue({ id: 3, email: 'test@example.com', password: 'hashed', companyId: 1, role: 'USER' });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const result = await service.register(' Test@Example.COM ', 'Test12345!', 'Test', 'User', 1);
 
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        firstName,
-        lastName,
-        companyId,
-      },
-    });
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { email: 'test@example.com' } });
+    expect(result).not.toHaveProperty('password');
+  });
 
-    const { password: _, ...safeUser } = user;
+  it('rejects duplicate emails', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 1 });
+    await expect(service.register('test@example.com', 'Test12345!', 'Test', 'User', 1)).rejects.toBeInstanceOf(ConflictException);
+  });
 
-    return safeUser;
-  }
+  it('rejects an invalid password without signing a token', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 3, email: 'test@example.com', password: 'hashed', role: 'USER', companyId: 1 });
+    (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+    await expect(service.login('test@example.com', 'Wrong123!')).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(jwtService.signAsync).not.toHaveBeenCalled();
+  });
 
-  async login(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-    });
+  it('signs tenant and role claims on login', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 3, email: 'test@example.com', password: 'hashed', role: 'SUPPORT', companyId: 1 });
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+    jwtService.signAsync.mockResolvedValue('token');
 
-    if (!user || !user.password) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
+    const result = await service.login(' Test@Example.COM ', 'Test12345!');
 
-    const passwordMatches = await bcrypt.compare(password, user.password);
-
-    if (!passwordMatches) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
-
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-      companyId: user.companyId,
-    };
-
-    const accessToken = await this.jwtService.signAsync(payload);
-
-    const { password: _, ...safeUser } = user;
-
-    return {
-      user: safeUser,
-      accessToken,
-    };
-  }
-}
+    expect(jwtService.signAsync).toHaveBeenCalledWith({ sub: 3, email: 'test@example.com', role: 'SUPPORT', companyId: 1 });
+    expect(result.user).not.toHaveProperty('password');
+  });
+});

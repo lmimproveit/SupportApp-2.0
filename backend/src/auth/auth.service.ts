@@ -22,8 +22,9 @@ export class AuthService {
     lastName: string,
     companyId: number,
   ) {
+    const normalizedEmail = email.trim().toLowerCase();
     const existingUser = await this.prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (existingUser) {
@@ -42,7 +43,7 @@ export class AuthService {
 
     const user = await this.prisma.user.create({
       data: {
-        email,
+        email: normalizedEmail,
         password: hashedPassword,
         firstName,
         lastName,
@@ -51,13 +52,13 @@ export class AuthService {
     });
 
     const { password: _, ...safeUser } = user;
-
     return safeUser;
   }
 
   async login(email: string, password: string) {
+    const normalizedEmail = email.trim().toLowerCase();
     const user = await this.prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (!user || !user.password) {
@@ -78,12 +79,8 @@ export class AuthService {
     };
 
     const accessToken = await this.jwtService.signAsync(payload);
-
     const { password: _, ...safeUser } = user;
 
-    return {
-      user: safeUser,
-      accessToken,
-    };
+    return { user: safeUser, accessToken };
   }
 }

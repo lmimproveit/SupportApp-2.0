@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  MinLength,
 } from 'class-validator';
 
 import { UserRole } from '../../../generated/prisma/enums';
@@ -12,6 +13,10 @@ import { UserRole } from '../../../generated/prisma/enums';
 export class CreateUserDto {
   @IsEmail()
   email!: string;
+
+  @IsString()
+  @MinLength(8)
+  password!: string;
 
   @IsString()
   @IsNotEmpty()
