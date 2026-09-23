@@ -1,5 +1,7 @@
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+jest.mock('@nestjs/jwt', () => ({ JwtService: class JwtService {} }));
+
 import { AuthService } from './auth.service';
 
 jest.mock('bcrypt', () => ({ hash: jest.fn(), compare: jest.fn() }));
