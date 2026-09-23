@@ -1,3 +1,5 @@
+jest.mock('@nestjs/jwt', () => ({ JwtService: class JwtService {} }));
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 
