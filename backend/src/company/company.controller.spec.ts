@@ -1,3 +1,5 @@
+jest.mock('@nestjs/passport', () => ({ AuthGuard: () => class MockAuthGuard {} }));
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { CompanyController } from './company.controller';
 import { CompanyService } from './company.service';
