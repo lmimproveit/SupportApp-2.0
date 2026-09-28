@@ -1,0 +1,8 @@
+import { ArrowRight, LockKeyhole, Mail, MessageCircle } from 'lucide-react'
+
+function BrandMark(){return <div className="brand-mark" aria-label="LM Improve IT"><span>LM</span></div>}
+
+export default function App(){return <main className="login-page">
+<section className="brand-panel"><div className="brand-copy"><BrandMark/><p className="eyebrow">LM Improve IT</p><h1>Support när du behöver den.</h1><p className="intro">Skapa ärenden, följ status och prata direkt med supporten – samlat på ett ställe.</p></div><div className="brand-footer"><MessageCircle size={20}/><span>SupportApp 2.0</span></div></section>
+<section className="login-panel"><div className="login-card"><div className="mobile-brand"><BrandMark/><span>Support</span></div><p className="eyebrow">Välkommen tillbaka</p><h2>Logga in</h2><p className="helper">Använd ditt konto för att komma till dina supportärenden.</p><form onSubmit={e=>e.preventDefault()}><label htmlFor="email">E-postadress</label><div className="input-wrap"><Mail size={19}/><input id="email" type="email" placeholder="namn@foretag.se"/></div><div className="label-row"><label htmlFor="password">Lösenord</label><button className="text-button" type="button">Glömt lösenord?</button></div><div className="input-wrap"><LockKeyhole size={19}/><input id="password" type="password" placeholder="••••••••"/></div><button className="primary-button" type="submit">Logga in <ArrowRight size={19}/></button></form><p className="login-note">Behöver du hjälp med ditt konto? <button className="text-button" type="button">Kontakta support</button></p></div></section>
+</main>}
