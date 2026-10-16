@@ -19,6 +19,7 @@ model Company {
 
   users   User[]
   tickets Ticket[]
+  internalTasks InternalTask[]
 }
 
 // Användare
@@ -40,6 +41,8 @@ model User {
 
   tickets Ticket[] @relation("CreatedTickets")
   messages Message[]
+  createdInternalTasks InternalTask[] @relation("InternalTaskCreator")
+  assignedInternalTasks InternalTask[] @relation("InternalTaskAssignee")
 }
 
 enum TicketStatus {
@@ -86,4 +89,29 @@ enum UserRole {
   USER
   SUPPORT
   ADMIN
+}
+// Internal-only tasks, separate from customer-facing support tickets.
+enum InternalTaskPriority {
+  LOW
+  NORMAL
+  HIGH
+}
+
+model InternalTask {
+  id Int @id @default(autoincrement())
+  title String
+  description String
+  customerName String?
+  priority InternalTaskPriority @default(NORMAL)
+  status TicketStatus @default(OPEN)
+  dueDate DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  companyId Int
+  company Company @relation(fields: [companyId], references: [id])
+  createdById Int
+  createdBy User @relation("InternalTaskCreator", fields: [createdById], references: [id])
+  assignedToId Int?
+  assignedTo User? @relation("InternalTaskAssignee", fields: [assignedToId], references: [id])
+  @@index([companyId, status])
 }
