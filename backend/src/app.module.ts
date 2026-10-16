@@ -8,6 +8,7 @@ import { UserModule } from './user/user.module';
 import { TicketModule } from './ticket/ticket.module';
 import { MessageModule } from './message/message.module';
 import { AuthModule } from './auth/auth.module';
+import { InternalTaskModule } from './internal-task/internal-task.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AuthModule } from './auth/auth.module';
     TicketModule,
     MessageModule,
     AuthModule,
+    InternalTaskModule,
   ],
   controllers: [AppController],
   providers: [AppService],
