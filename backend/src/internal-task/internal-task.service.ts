@@ -10,7 +10,7 @@ export class InternalTaskService {
   private async validateAssignee(id: number | undefined, companyId: number) {
     if (id === undefined) return;
     const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user || user.companyId !== companyId || ![UserRole.ADMIN, UserRole.SUPPORT].includes(user.role)) {
+    if (!user || user.companyId !== companyId || (user.role !== UserRole.ADMIN && user.role !== UserRole.SUPPORT)) {
       throw new ForbiddenException('Invalid assignee');
     }
   }
