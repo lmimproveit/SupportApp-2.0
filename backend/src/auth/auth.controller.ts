@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -9,6 +9,7 @@ export class AuthController {
 
   @Post('register')
   register(@Body() body: RegisterDto) {
+    if (process.env.ENABLE_PUBLIC_REGISTRATION !== 'true') throw new ForbiddenException('Public registration is disabled');
     return this.authService.register(
       body.email,
       body.password,
