@@ -1,4 +1,14 @@
 import { UnauthorizedException } from '@nestjs/common';
+
+jest.mock('@nestjs/passport', () => ({
+  PassportStrategy: () => class {},
+}));
+
+jest.mock('passport-jwt', () => ({
+  ExtractJwt: { fromAuthHeaderAsBearerToken: () => () => null },
+  Strategy: class {},
+}));
+
 import { JwtStrategy } from './jwt.strategy';
 
 describe('JwtStrategy', () => {
