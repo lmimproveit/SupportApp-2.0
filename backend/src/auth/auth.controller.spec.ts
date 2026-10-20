@@ -1,3 +1,4 @@
+jest.mock('@nestjs/passport', () => ({ AuthGuard: () => class {} }));
 jest.mock('@nestjs/jwt', () => ({ JwtService: class JwtService {} }));
 
 import { Test, TestingModule } from '@nestjs/testing';
