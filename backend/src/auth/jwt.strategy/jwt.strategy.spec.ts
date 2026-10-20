@@ -5,7 +5,7 @@ jest.mock('@nestjs/passport', () => ({
 }));
 
 jest.mock('passport-jwt', () => ({
-  ExtractJwt: { fromAuthHeaderAsBearerToken: () => () => null },
+  ExtractJwt: { fromAuthHeaderAsBearerToken: () => () => null, fromExtractors: () => () => null },
   Strategy: class {},
 }));
 
