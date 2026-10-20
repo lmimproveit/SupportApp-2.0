@@ -15,6 +15,13 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
+  async getSafeUser(id: number) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new UnauthorizedException();
+    const { password: _, ...safeUser } = user;
+    return safeUser;
+  }
+
   async register(
     email: string,
     password: string,

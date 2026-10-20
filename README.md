@@ -2,10 +2,18 @@
 
 SupportApp är en supportapplikation för mobil och webb med backend och en kommande adminportal. Projektet utvecklas först för internt bruk men backend är strukturerad för att kunna hantera flera kundföretag.
 
+## Projektstatus och utvecklingslogg
+
+Se [utvecklingsloggen](docs/UTVECKLINGSLOGG.md) för aktuell driftsmiljö, genomförda tester, säkerhetsarbete, kända begränsningar och nästa steg. Dokumentet skiljer tydligt på driftsatt funktionalitet och ändringar som fortfarande ligger i en PR.
+
+**Aktuell produktionsgren:** `internal-tasks`. **Säkerhetsgranskning:** `security-session-review` (utkast [PR #3](https://github.com/lmimproveit/SupportApp-2.0/pull/3)).
+
 ## Projektstruktur
 
 - `backend/` – NestJS API, autentisering, Prisma och PostgreSQL
-- `admin/` – planerad adminportal
+- `frontend/` – React/Vite-webbgränssnitt (intern portal och kunddemo)
+- `docs/` – utvecklingslogg och projektdokumentation
+- `admin/` – planerad separat adminportal
 - `mobile/` – planerad mobilapp
 
 ## Backend – nuvarande status
@@ -37,7 +45,7 @@ Tre roller används:
 - `SUPPORT` – supportpersonal
 - `ADMIN` – administratör inom sitt företag
 
-JWT innehåller användarens id, roll och `companyId`. Skyddade resurser kontrolleras mot den autentiserade användaren i stället för att lita på id:n som skickas från klienten.
+JWT innehåller användarens id, roll och `companyId`. I nuvarande driftsatta version används dessa signerade claims i JWT-strategin. En ändring som dessutom läser aktuell roll och företag från databasen är förberedd i PR #3, men är ännu inte driftsatt. Skyddade resurser använder den autentiserade användarens identitet i stället för att lita på id:n som skickas från klienten.
 
 Nuvarande tenantmodell innebär att SUPPORT och ADMIN är företagsbundna. De får alltså inte läsa eller ändra data från andra företag. USER får dessutom endast komma åt sina egna ärenden och sin egen profil där det är relevant.
 
@@ -86,7 +94,7 @@ API:t använder port 3000 som standard.
 
 ### Auth
 
-- `POST /auth/register`
+- `POST /auth/register` – avstängd som standard (kräver `ENABLE_PUBLIC_REGISTRATION=true`)
 - `POST /auth/login`
 
 Login returnerar en JWT som skickas på skyddade requests:
@@ -133,4 +141,4 @@ En User tillhör ett Company. Ett Ticket tillhör både skapande User och Compan
 
 ## Kvar inför produktion
 
-Backendens kärna och grundläggande säkerhetsmodell är implementerad, men några produktionsfunktioner är medvetet kvar som nästa etapp: e-postverifiering, lösenordsåterställning, MFA för admin, rate limiting/brute-force-skydd och ett säkert onboarding-/inbjudningsflöde för nya företag. Nuvarande `POST /auth/register` kräver ett existerande `companyId` och bör därför inte exponeras som fri publik registrering innan onboardingflödet är implementerat.
+Backendens kärna och grundläggande säkerhetsmodell är implementerad, men några produktionsfunktioner är medvetet kvar som nästa etapp: e-postverifiering, lösenordsåterställning, MFA för admin, rate limiting/brute-force-skydd och ett säkert onboarding-/inbjudningsflöde för nya företag. Nuvarande `POST /auth/register` kräver ett existerande `companyId` och är avstängd som standard. Den ska inte aktiveras som fri publik registrering innan onboardingflödet är implementerat. TLS-säkerheten för Render–Supabase är ännu inte verifierad; se utvecklingsloggen.
