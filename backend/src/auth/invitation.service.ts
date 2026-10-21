@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { InviteUserDto } from './dto/invite-user.dto';
 import { randomBytes, createHash } from 'node:crypto';
@@ -12,6 +12,8 @@ export class InvitationService {
   async invite(input: InviteUserDto, companyId: number, issuedById: number) {
     const email = input.email.trim().toLowerCase();
     if (await this.prisma.user.findUnique({where:{email}})) throw new ConflictException('Email already registered');
+    const frontendUrl = process.env.FRONTEND_URL ?? process.env.CORS_ORIGIN;
+    if (!frontendUrl || !/^https:\/\//.test(frontendUrl)) throw new BadRequestException('Secure frontend URL is not configured');
     const token = randomBytes(32).toString('hex');
     await this.prisma.userInvitation.create({data:{
       email,firstName:input.firstName.trim(),lastName:input.lastName.trim(),
@@ -19,8 +21,6 @@ export class InvitationService {
       expiresAt:new Date(Date.now()+24*60*60*1000)
     }});
     // No email is sent here. Only return the link to the authenticated admin over HTTPS.
-    const frontendUrl = process.env.FRONTEND_URL ?? process.env.CORS_ORIGIN;
-    if (!frontendUrl || !/^https:\/\//.test(frontendUrl)) throw new BadRequestException('Secure frontend URL is not configured');
     return { email, expiresInHours:24, inviteUrl:frontendUrl.replace(/\/$/,'')+'/?invite='+encodeURIComponent(token) };
   }
 
