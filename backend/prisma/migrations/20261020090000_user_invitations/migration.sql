@@ -16,3 +16,7 @@ CREATE UNIQUE INDEX "UserInvitation_tokenHash_key" ON "UserInvitation"("tokenHas
 CREATE INDEX "UserInvitation_companyId_email_idx" ON "UserInvitation"("companyId", "email");
 ALTER TABLE "UserInvitation" ADD CONSTRAINT "UserInvitation_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "Company"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "UserInvitation" ADD CONSTRAINT "UserInvitation_issuedById_fkey" FOREIGN KEY ("issuedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- Invitation tokens and personal details must not be exposed through Supabase API roles.
+ALTER TABLE public."UserInvitation" ENABLE ROW LEVEL SECURITY;
+REVOKE ALL PRIVILEGES ON TABLE public."UserInvitation" FROM anon, authenticated;
