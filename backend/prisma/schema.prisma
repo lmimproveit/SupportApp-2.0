@@ -20,6 +20,7 @@ model Company {
   users   User[]
   tickets Ticket[]
   internalTasks InternalTask[]
+  invitations UserInvitation[]
 }
 
 // Användare
@@ -43,6 +44,7 @@ model User {
   messages Message[]
   createdInternalTasks InternalTask[] @relation("InternalTaskCreator")
   assignedInternalTasks InternalTask[] @relation("InternalTaskAssignee")
+  invitations UserInvitation[] @relation("InvitationIssuer")
 }
 
 enum TicketStatus {
@@ -114,4 +116,21 @@ model InternalTask {
   assignedToId Int?
   assignedTo User? @relation("InternalTaskAssignee", fields: [assignedToId], references: [id])
   @@index([companyId, status])
+}
+
+model UserInvitation {
+  id Int @id @default(autoincrement())
+  email String
+  firstName String
+  lastName String
+  role UserRole @default(USER)
+  tokenHash String @unique
+  expiresAt DateTime
+  acceptedAt DateTime?
+  createdAt DateTime @default(now())
+  companyId Int
+  company Company @relation(fields: [companyId], references: [id])
+  issuedById Int
+  issuedBy User @relation("InvitationIssuer", fields: [issuedById], references: [id])
+  @@index([companyId, email])
 }

@@ -11,3 +11,6 @@ export const login=(email:string,password:string)=>request<LoginResult>('/auth/l
 export const getTasks=(token:string)=>request<InternalTask[]>('/internal-tasks',token);
 export const createTask=(token:string,task:{title:string;description:string;customerName?:string;priority:string;dueDate?:string})=>request<InternalTask>('/internal-tasks',token,{method:'POST',body:JSON.stringify(task)});
 export const updateTask=(token:string,id:number,task:Partial<Pick<InternalTask,'status'|'priority'>>)=>request<InternalTask>('/internal-tasks/'+id,token,{method:'PATCH',body:JSON.stringify(task)});
+
+export const inviteUser=(token:string,user:{email:string;firstName:string;lastName:string;role:'ADMIN'|'SUPPORT'|'USER'})=>request<{email:string;inviteUrl:string;expiresInHours:number}>('/auth/invite',token,{method:'POST',body:JSON.stringify(user)});
+export const acceptInvitation=(inviteToken:string,password:string)=>request<{ok:boolean}>('/auth/accept-invitation',null,{method:'POST',body:JSON.stringify({token:inviteToken,password})});
